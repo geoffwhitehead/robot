@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/geoffwhitehead/robot/issues"
   },
-  "homepage": "https://github.com/geoffwhitehead/robot#readme"
+  "homepage": "https://github.com/geoffwhitehead/robot#readme",
+  "dependencies": {
+    "rpi-gpio": "^0.7.0"
+  }
 }
