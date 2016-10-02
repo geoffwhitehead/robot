@@ -4,6 +4,7 @@
   "description": "api for communicating with pi robot",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -19,6 +20,7 @@
   "dependencies": {
     "body-parser": "^1.15.2",
     "express": "^4.14.0",
-    "rpi-gpio": "^0.7.0"
+    "rpi-gpio": "^0.7.0",
+    "rsvp": "^3.3.2"
   }
 }

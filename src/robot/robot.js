@@ -1,95 +1,95 @@
 var gpio = require('rpi-gpio');
+var RSVP = require('rsvp');
 
-gpio.setMode(gpio.MODE_BCM);
-
-// var pins = [3,5,7,8,10,11,12,13,15,16,18,19,21,22,23,24,26,29,31,32,33,35,36,37,38,40];
-//
-// for (var i = 0; i < pins.length; i++) {
-//   gpio.setup(pins[i], gpio.DIR_OUT, function () {
-//     gpio.write(pins[i], true, function (err) {
-//       console.log('Written to pin ' + pins[i]);
-//       if (err) throw err;
-//     });
-//   });
-// }
-
-var run = function() {
-
-  set_motor(0, 1, 0, 1);
-
-}
-
-var set_motor = function(pin_7, pin_8, pin_9, pin_10) {
-
-  arguments.forEach(function(pin){
-    gpio.setup(pin, gpio.DIR_OUT, function () {
-      gpio.write(pin, pin, function (err) {
-          if (err) throw err;
-          console.log('Written to pin ' + pin);
-      });
-    });
-  });
-
-};
-
-//   var pin
-//   gpio.setup(8, gpio.DIR_OUT, function () {
-//     gpio.write(8, false, function (err) {
-//       if (err) throw err;
-//       console.log('Written to pin 2');
-//     });
-//   });
-
-// }
-
-
-module.exports = {
-    run : run
-}
-
-
-
-function Pin (pin, mode) {
+function Pin (pin, state, mode, cb) {
     this.pin = pin;
-    this.mode = mode;
-}
+    this.state = state || false;
+    this.mode = mode || gpio.DIR_OUT;
 
-function Motor (pin_pos, pin_neg) {
-    this.pins = [];
-    var state = false;
-    pins.push(new Pin(pin_pos, false));
-    pins.push(new Pin(pin_neg, false));
+    gpio.setup(pin, mode, cb);
 
     this.get_state = function(){
         return this.state;
     }
 
-    this.set_state = function(state){
+    this.set_state = function(state, cb){
         this.state = state;
+        gpio.write(pin, state, cb);
     }
 }
 
-function Car (left_pos, left_neg, right_pos, right_neg) {
+function Motor (pin_a, pin_b) {
+    var pins = [];
+    this.pins = pins;
 
+    var state = false;
+    pins.push(new Pin(pin_a));
+    pins.push(new Pin(pin_b));
+
+    this.get_state = function(){
+       return this.state;
+    }
+
+    this.set_state = function(state) {
+        var promise = new RSVP.Promise(function(resolve, reject){
+            console.log("acivating pins");
+            this.state = state;
+            pins[0].set_state(false);
+            pins[1].set_state(state);
+            console.log("done acivating pins");
+        });
+        return promise;
+    }
+}
+
+function Car (left_a, left_b, right_a, right_b) {
+    gpio.setMode(gpio.MODE_BCM);
     var motors = [];
 
-    motors.push(new Motor(left_pos, left_neg));
-    motors.push(new Motor(right_pos, right_neg));
+    motors.push(new Motor(left_a, left_b));
+    motors.push(new Motor(right_a, right_b));
     
     var left_motor = motors[0];
     var right_motor = motors[1];
 
     this.forward = function (cb) {
+        console.log("-- activating all motors")
         motors.forEach(function(motor){
             motor.set_state(true);
-        })
+        });
+        if (typeof(cb) === 'function'){
+            cb();
+        }
+    }
+
+    this.stop = function (cb) {
+        console.log("-- stopping all motors")
+        motors.forEach(function(motor){
+            motor.set_state(false);
+        });
         if (typeof(cb) === 'function'){
             cb();
         }
     }
 }
 
-var car = new Car(7, 8, 9, 10);
+var run = function() {
 
-car.forward();
+    var car = new Car(7, 8, 9, 10);
 
+    car.forward(function (err) {
+        if (err) console.log(err);
+        setTimeout(function () {
+            car.stop(function () {
+                console.log('done!');
+            });
+        }, 3000)
+    });
+
+}
+
+
+
+module.exports = {
+    run : run
+}
